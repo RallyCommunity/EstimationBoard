@@ -3,10 +3,141 @@
 <head>
     <title>Estimation Board</title>
 
-    <script type="text/javascript" src="/apps/2.0/sdk.js"></script>
+    <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
 
     <script type="text/javascript">
         Rally.onReady(function () {
+                Ext.define('SizesField', {
+    extend: 'Ext.form.field.Base',
+    alias: 'widget.sizesfield',
+    requires: [
+        'Rally.ui.Button'
+    ],
+
+    fieldSubTpl: '<div id="{id}"></div>',
+
+    cls: 'sizes',
+
+    config: {
+        /**
+         * @cfg {Object}
+         *
+         * The size settings value for this field
+         */
+        value: undefined
+    },
+
+    onDestroy: function() {
+        if (this._sizesContainer) {
+            this._sizesContainer.destroy();
+            delete this._sizesContainer;
+        }
+        this.callParent(arguments);
+    },
+
+    onRender: function() {
+        this.callParent(arguments);
+
+        this._sizesContainer = Ext.create('Ext.Container', {
+            renderTo: this.inputEl,
+            cls: 'sizes-container',
+            items: this._buildRows()
+        });
+    },
+
+    /**
+     * When a form asks for the data this field represents,
+     * give it the name of this field and the ref of the selected project (or an empty string).
+     * Used when persisting the value of this field.
+     * @return {Object}
+     */
+    getSubmitData: function() {
+        var data = {};
+        data[this.name] = Ext.JSON.encode(_.map(Ext.ComponentQuery.query('container', this._sizesContainer), function(row) {
+            var labelTextBox = Ext.ComponentQuery.query('rallytextfield', row)[0],
+                valueTextBox = Ext.ComponentQuery.query('rallynumberfield', row)[0];
+
+            return {
+                text: labelTextBox.getValue(),
+                value: valueTextBox.getValue()
+            };
+        }));
+
+        return data;
+    },
+
+    _buildRows: function() {
+        return [{
+          xtype: 'component',
+          margin: '0 0 5px 0',
+          html: '<span class="label-header">Name</span><span class="plan-est-header">Plan Est</span>'
+        }].concat(_.map(Ext.JSON.decode(this._value), function(value) {
+            return this._buildRow(value);
+        }, this));
+    },
+
+    _buildRow: function(value) {
+        return {
+            xtype: 'container',
+            layout: 'hbox',
+            items: [
+                {
+                    xtype: 'rallybutton',
+                    border: false,
+                    frame: false,
+                    cls: 'row-btn plus',
+                    disabled: false,
+                    itemId: 'plusButton',
+                    iconCls: 'icon-plus',
+                    listeners: {
+                        click: this._addRow,
+                        scope: this
+                    }
+                },
+                {
+                    xtype: 'rallybutton',
+                    border: false,
+                    cls: 'row-btn minus',
+                    frame: false,
+                    iconCls: 'icon-minus',
+                    itemId: 'minusButton',
+                    listeners: {
+                        click: this._removeRow,
+                        scope: this
+                    }
+                },
+                {
+                    xtype: 'rallytextfield',
+                    width: 100,
+                    value: value && value.text
+                },
+                {
+                    xtype: 'rallynumberfield',
+                    width: 50,
+                    margin: '0 0 0 10px',
+                    value: value && value.value
+                }
+            ]
+        };
+    },
+
+    _addRow: function(button) {
+        var container = button.up();
+        var sizesContainer = container.up();
+        var index = sizesContainer.items.indexOf(container);
+        sizesContainer.insert(index + 1, this._buildRow());
+    },
+
+    _removeRow: function(button) {
+        button.up().destroy();
+    },
+
+    setValue: function(value) {
+        this.callParent(arguments);
+        this._value = value;
+    }
+});
+
                 /**
  * Allows configuring of rows for the cardboard
  *
@@ -191,15 +322,16 @@ Ext.define('RowSettingsField', {
         'Rally.ui.TextField',
         'Rally.ui.NumberField',
         'RowSettingsField',
-        'Rally.data.wsapi.Filter'
+        'Rally.data.wsapi.Filter',
+        'SizesField'
     ],
 
     getFields: function (context) {
         return [
             {
                 name: 'sizes',
-                xtype: 'rallytextfield',
-                fieldLabel: 'Sizes'
+                xtype: 'sizesfield',
+                fieldLabel: 'Columns'
             },
             {
                 name: 'groupHorizontallyByField',
@@ -227,6 +359,7 @@ Ext.define('RowSettingsField', {
         ];
     }
 });
+
                 Ext.define('EstimationBoardApp', {
     extend: 'Rally.app.App',
     alias: 'widget.boardapp',
@@ -253,10 +386,17 @@ Ext.define('RowSettingsField', {
         defaultSettings: {
             types: [
                 'HierarchicalRequirement',
-                'Defect'
+                'Defect',
+                'DefectSuite'
             ],
             showRows: false,
-            sizes: '1,2,3,5,8'
+            sizes: Ext.JSON.encode([
+              {text: 'XS', value: 1},
+              {text: 'S', value: 2},
+              {text: 'M', value: 3},
+              {text: 'L', value: 5},
+              {text: 'XL', value: 8}
+            ])
         }
     },
 
@@ -290,18 +430,20 @@ Ext.define('RowSettingsField', {
                         }
                     },
                     {
-                        ptype: 'rallygridboardcustomfiltercontrol',
-                        filterChildren: false,
-                        filterControlConfig: {
-                            margin: '3 9 3 30',
+                        ptype: 'rallygridboardinlinefiltercontrol',
+                        inlineFilterButtonConfig: {
+                            stateful: true,
+                            stateId: context.getScopedStateId('board-filters'),
                             modelNames: modelNames,
-                            stateful: true,
-                            stateId: context.getScopedStateId('board-custom-filter-button')
-                        },
-                        showOwnerFilter: true,
-                        ownerFilterControlConfig: {
-                            stateful: true,
-                            stateId: context.getScopedStateId('board-owner-filter')
+                            inlineFilterPanelConfig: {
+                                quickFilterPanelConfig: {
+                                    defaultFields: [
+                                        'ArtifactSearch',
+                                        'Owner',
+                                        'ModelType'
+                                    ]
+                                }
+                            }
                         }
                     },
                     {
@@ -309,7 +451,7 @@ Ext.define('RowSettingsField', {
                         headerPosition: 'left',
                         boardFieldBlackList: ['Successors', 'Predecessors', 'DisplayColor'],
                         modelNames: modelNames,
-                        boardFieldDefaults: ['PlanEstimate']
+                        boardAlwaysSelectedValues: ['PlanEstimate']
                     }
                 ],
                 context: context,
@@ -345,7 +487,8 @@ Ext.define('RowSettingsField', {
             context: this.getContext(),
             cardConfig: {
                 editable: true,
-                showIconMenus: true
+                showIconMenus: true,
+                fields: ['PlanEstimate']
             },
             loadMask: true,
             plugins: [{ptype:'rallyfixedheadercardboard'}],
@@ -357,11 +500,11 @@ Ext.define('RowSettingsField', {
                     headerTpl: '{size}'
                 }
             },
-            columns: _.map([null].concat(this.getSetting('sizes').split(',')), function(size) {
+            columns: _.map([{text: 'No Estimate', value: null}].concat(Ext.JSON.decode(this.getSetting('sizes'))), function(size) {
                 return {
-                    value: size && parseInt(size, 10),
+                    value: size.value,
                     columnHeaderConfig: {
-                        headerData: {size: size || 'No Estimate'}
+                        headerData: {size: size.text}
                     }
                 };
             })
@@ -434,6 +577,50 @@ Ext.define('RowSettingsField', {
     <style type="text/css">
         .customboard {
   overflow-y: hidden;
+}
+.sizes .x-field-label-cell {
+  vertical-align: top;
+}
+.sizes .label-header {
+  margin-left: 60px;
+  font-family: NotoSansBold;
+  font-size: 12px;
+}
+.sizes .plan-est-header {
+  margin-left: 70px;
+  font-family: NotoSansBold;
+  font-size: 12px;
+}
+.sizes .sizes-container {
+  margin-top: 5px;
+}
+.row-btn {
+  background-color: transparent;
+  font-size: 14px;
+  height: 26px;
+  width: 28px;
+  float: left;
+  padding: 2px 0 0 0;
+}
+.row-btn .btn-button {
+  border: 0 !important;
+}
+.row-btn.minus {
+  color: #666666;
+}
+.row-btn.plus {
+  color: #00A9E0;
+}
+.row-btn.plus:hover {
+  color: #29beff;
+}
+.row-btn.plus.item-disabled,
+.row-btn.plus.item-disabled:hover {
+  cursor: default;
+}
+.row-btn.plus.item-disabled span,
+.row-btn.plus.item-disabled:hover span {
+  color: #666666;
 }
 
     </style>

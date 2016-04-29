@@ -6,15 +6,16 @@ Ext.define('Settings', {
         'Rally.ui.TextField',
         'Rally.ui.NumberField',
         'RowSettingsField',
-        'Rally.data.wsapi.Filter'
+        'Rally.data.wsapi.Filter',
+        'SizesField'
     ],
 
     getFields: function (context) {
         return [
             {
                 name: 'sizes',
-                xtype: 'rallytextfield',
-                fieldLabel: 'Sizes'
+                xtype: 'sizesfield',
+                fieldLabel: 'Columns'
             },
             {
                 name: 'groupHorizontallyByField',
