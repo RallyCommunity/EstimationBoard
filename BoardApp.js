@@ -88,8 +88,7 @@ Ext.define('EstimationBoardApp', {
                         ptype: 'rallygridboardfieldpicker',
                         headerPosition: 'left',
                         boardFieldBlackList: ['Successors', 'Predecessors', 'DisplayColor'],
-                        modelNames: modelNames,
-                        boardAlwaysSelectedValues: ['PlanEstimate']
+                        modelNames: modelNames
                     }
                 ],
                 context: context,
@@ -125,8 +124,7 @@ Ext.define('EstimationBoardApp', {
             context: this.getContext(),
             cardConfig: {
                 editable: true,
-                showIconMenus: true,
-                fields: ['PlanEstimate']
+                showIconMenus: true
             },
             loadMask: true,
             plugins: [{ptype:'rallyfixedheadercardboard'}],
