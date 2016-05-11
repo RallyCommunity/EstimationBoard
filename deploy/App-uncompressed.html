@@ -126,10 +126,18 @@
         var sizesContainer = container.up();
         var index = sizesContainer.items.indexOf(container);
         sizesContainer.insert(index + 1, this._buildRow());
+        this._adjustSize();
     },
 
     _removeRow: function(button) {
         button.up().destroy();
+        this._adjustSize();
+    },
+
+    _adjustSize: function() {
+      //little hack- force app settings resize
+      var appSettings = this.up('rallyappsettings');
+      appSettings.fireEvent('appsettingsready', appSettings);
     },
 
     setValue: function(value) {
