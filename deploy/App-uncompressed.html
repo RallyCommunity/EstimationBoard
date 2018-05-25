@@ -449,7 +449,17 @@ Ext.define('RowSettingsField', {
                                         'ArtifactSearch',
                                         'Owner',
                                         'ModelType'
-                                    ]
+                                    ],
+                                    addQuickFilterConfig: {
+                                        whiteListFields: ['Milestones', 'Tags']
+                                    }
+                                },
+                                advancedFilterPanelConfig: {
+                                    advancedFilterRowsConfig: {
+                                        propertyFieldConfig: {
+                                            whiteListFields: ['Milestones', 'Tags']
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -572,7 +582,8 @@ Ext.define('RowSettingsField', {
 
             Rally.launchApp('EstimationBoardApp', {
                 name:"Estimation Board",
-	            parentRepos:""
+                parentRepos:"",
+                version:"1.0.1"
             });
 
         });
