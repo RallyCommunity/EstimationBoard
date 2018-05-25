@@ -79,7 +79,17 @@ Ext.define('EstimationBoardApp', {
                                         'ArtifactSearch',
                                         'Owner',
                                         'ModelType'
-                                    ]
+                                    ],
+                                    addQuickFilterConfig: {
+                                        whiteListFields: ['Milestones', 'Tags']
+                                    }
+                                },
+                                advancedFilterPanelConfig: {
+                                    advancedFilterRowsConfig: {
+                                        propertyFieldConfig: {
+                                            whiteListFields: ['Milestones', 'Tags']
+                                        }
+                                    }
                                 }
                             }
                         }
