@@ -1,5 +1,5 @@
 # EstimationBoard
-New and Improved SDK2 based Estimation Board. This custom app is an update to the built-in [App Catalog Estimation Board] (https://help.rallydev.com/estimation-board).
+New and Improved SDK2 based Estimation Board. This custom app is an update to the built-in App Catalog Estimation Board.
 
 ![estimation board screenshot](images/Estimation-Screen1.png "Estimation Board Screenshot")
 
